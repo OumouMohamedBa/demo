@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Étudiants</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 5px;
+            display: inline-block;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-success {
+            background-color: #28a745;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .actions {
+            white-space: nowrap;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            right: 15px;
+            top: 10px;
+        }
+        .close:hover {
+            color: black;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .form-buttons {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .student-id {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestion des Étudiants</h1>
+        
+        <button class="btn btn-success" onclick="openAddModal()">Ajouter un étudiant</button>
+        
+        <div th:if="${students.empty}" class="empty-state">
+            <p>Aucun étudiant trouvé. Cliquez sur "Ajouter un étudiant" pour commencer.</p>
+        </div>
+        
+        <table th:if="${!students.empty}">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Prénom</th>
+                    <th>Nom</th>
+                    <th>Email</th>
+                    <th>Téléphone</th>
+                    <th>Adresse</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="student : ${students}">
+                    <td th:text="${student.id}"></td>
+                    <td th:text="${student.firstName}"></td>
+                    <td th:text="${student.lastName}"></td>
+                    <td th:text="${student.email}"></td>
+                    <td th:text="${student.phone}"></td>
+                    <td th:text="${student.address}"></td>
+                    <td class="actions">
+                        <button class="btn btn-warning edit-btn" 
+                                th:attr="data-id=${student.id}, 
+                                       data-first-name=${student.firstName}, 
+                                       data-last-name=${student.lastName}, 
+                                       data-email=${student.email}, 
+                                       data-phone=${student.phone}, 
+                                       data-address=${student.address}">Modifier</button>
+                        <button class="btn btn-danger" th:onclick="'deleteStudent(' + ${student.id} + ')'">Supprimer</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 20px;">
+            <a href="/h2-console" class="btn">Console H2</a>
+        </div>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAddModal()">&times;</span>
+            <h2>Ajouter un Étudiant</h2>
+            <form id="addForm">
+                <div class="form-group">
+                    <label for="addFirstName">Prénom:</label>
+                    <input type="text" id="addFirstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="addLastName">Nom:</label>
+                    <input type="text" id="addLastName" name="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label for="addEmail">Email:</label>
+                    <input type="email" id="addEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="addPhone">Téléphone:</label>
+                    <input type="text" id="addPhone" name="phone">
+                </div>
+                <div class="form-group">
+                    <label for="addAddress">Adresse:</label>
+                    <input type="text" id="addAddress" name="address">
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-success">Ajouter</button>
+                    <button type="button" class="btn" onclick="closeAddModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Student Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Modifier un Étudiant</h2>
+            <div class="student-id">
+                <strong>ID Étudiant:</strong> <span id="editStudentId"></span>
+            </div>
+            <form id="editForm">
+                <input type="hidden" id="editId" name="id">
+                <div class="form-group">
+                    <label for="editFirstName">Prénom:</label>
+                    <input type="text" id="editFirstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editLastName">Nom:</label>
+                    <input type="text" id="editLastName" name="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label for="editEmail">Email:</label>
+                    <input type="email" id="editEmail" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="editPhone">Téléphone:</label>
+                    <input type="text" id="editPhone" name="phone">
+                </div>
+                <div class="form-group">
+                    <label for="editAddress">Adresse:</label>
+                    <input type="text" id="editAddress" name="address">
+                </div>
+                <div class="form-buttons">
+                    <button type="submit" class="btn btn-warning">Mettre à jour</button>
+                    <button type="button" class="btn" onclick="closeEditModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openAddModal() {
+            document.getElementById('addModal').style.display = 'block';
+            document.getElementById('addForm').reset();
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').style.display = 'none';
+        }
+
+        function openEditModal(id, firstName, lastName, email, phone, address) {
+            document.getElementById('editModal').style.display = 'block';
+            document.getElementById('editId').value = id;
+            document.getElementById('editStudentId').textContent = id;
+            document.getElementById('editFirstName').value = firstName;
+            document.getElementById('editLastName').value = lastName;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editPhone').value = phone || '';
+            document.getElementById('editAddress').value = address || '';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function deleteStudent(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet étudiant?')) {
+                fetch('/delete/' + id, {method: 'GET'})
+                    .then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        }
+                    });
+            }
+        }
+
+        // Handle add form submission
+        document.getElementById('addForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const student = Object.fromEntries(formData);
+            
+            fetch('/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(student)
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            });
+        });
+
+        // Handle edit form submission
+        document.getElementById('editForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const student = Object.fromEntries(formData);
+            const id = student.id;
+            delete student.id;
+            
+            fetch('/edit/' + id, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(student)
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+            });
+        });
+
+        // Handle edit button clicks
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('edit-btn')) {
+                const btn = e.target;
+                const id = btn.getAttribute('data-id');
+                const firstName = btn.getAttribute('data-first-name');
+                const lastName = btn.getAttribute('data-last-name');
+                const email = btn.getAttribute('data-email');
+                const phone = btn.getAttribute('data-phone');
+                const address = btn.getAttribute('data-address');
+                openEditModal(id, firstName, lastName, email, phone, address);
+            }
+        });
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const addModal = document.getElementById('addModal');
+            const editModal = document.getElementById('editModal');
+            if (event.target == addModal) {
+                addModal.style.display = 'none';
+            }
+            if (event.target == editModal) {
+                editModal.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
